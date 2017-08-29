@@ -1,12 +1,14 @@
 package cmd
 
 import (
-	"fmt"
-
 	"github.com/Ssawa/destiny/utils"
+	"github.com/boltdb/bolt"
+	"github.com/satori/go.uuid"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
+
+var tags []string
 
 // addCmd represents the add command
 var addCmd = &cobra.Command{
@@ -14,21 +16,44 @@ var addCmd = &cobra.Command{
 	Short: "Add a new adage",
 	Long:  `Add and store a new adage.`,
 	Example: `# Add a new quote, "Hello, World!" with the tags "boring" and "offensive"
-# Will open up your $EDITOR in which to type your quote
-destiny add boring offensive
+destiny add "Hello, World!" -t boring -t offensive
 
-# Pass in quote using Git commit syntax
-destiny add boring offensive -m "Hello, World!"
+# Will open up your $EDITOR in which to type your quote
+destiny add -t boring -t offensive
 
 # Pass in quote via stdin
-echo "Hello, World!" | destiny add boring offensive
+echo "Hello, World!" | destiny add -t boring -t offensive
 `,
 
 	Aliases: []string{"new", "create"},
+
+	Args: cobra.MaximumNArgs(1),
+
 	RunE: func(cmd *cobra.Command, args []string) error {
-		fmt.Println(args)
+		// Open the database in Write mode so that we can add a new adage
+		adage := args[0]
+		utils.Verbose.Println("Adage is: ", adage)
+
+		utils.Verbose.Println("Opening database...")
 		db, err := utils.OpenReadWrite(viper.GetString("database"))
-		fmt.Println(db)
+		if err != nil {
+			return err
+		}
+
+		id := uuid.NewV1()
+		utils.Verbose.Println("UUID generated: ", id)
+
+		utils.Verbose.Println("Starting transaction")
+		err = db.Update(func(tx *bolt.Tx) error {
+			bucket, err := tx.CreateBucketIfNotExists([]byte("adages"))
+			if err != nil {
+				return err
+			}
+
+			utils.Verbose.Println("Saving to database")
+			err = bucket.Put(id.Bytes(), []byte(adage))
+			return nil
+		})
 		return err
 	},
 }
@@ -36,13 +61,5 @@ echo "Hello, World!" | destiny add boring offensive
 func init() {
 	RootCmd.AddCommand(addCmd)
 
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// addCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// addCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	addCmd.Flags().StringArrayVarP(&tags, "tag", "t", nil, "Help message for toggle")
 }
