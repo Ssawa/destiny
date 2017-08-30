@@ -1,6 +1,8 @@
 package storage
 
 import (
+	"bytes"
+	"encoding/gob"
 	"log"
 	"sync"
 	"testing"
@@ -71,11 +73,27 @@ func TestAdageSerializeDeSerialize(t *testing.T) {
 		log.Printf("%s: %s", description, elapsed)
 	}
 
+	adageBuffer = new(bytes.Buffer)
+	adageEncoder = gob.NewEncoder(adageBuffer)
+	adageDecoder = gob.NewDecoder(adageBuffer)
+	adageMutex = sync.Mutex{}
+
 	testSerial("Cached Serial One Iteration", 1, adage.Serialize, DeserializeAdage)
 	testSerial("Direct Serial One Iteration", 1, adage.SerializeDirect, DeserializeAdageDirect)
 
+	adageBuffer = new(bytes.Buffer)
+	adageEncoder = gob.NewEncoder(adageBuffer)
+	adageDecoder = gob.NewDecoder(adageBuffer)
+	adageMutex = sync.Mutex{}
+
 	testSerial("Cached Serial Many Iterations", 10000, adage.Serialize, DeserializeAdage)
 	testSerial("Direct Serial Many Iterations", 10000, adage.SerializeDirect, DeserializeAdageDirect)
+
+	adageBuffer = new(bytes.Buffer)
+	adageEncoder = gob.NewEncoder(adageBuffer)
+	adageDecoder = gob.NewDecoder(adageBuffer)
+	adageMutex = sync.Mutex{}
+
 	testParallel("Cached Parallel Many Iterations", 10, 10000, adage.Serialize, DeserializeAdage)
 	testParallel("Direct Parallel Many Iterations", 10, 10000, adage.SerializeDirect, DeserializeAdageDirect)
 }

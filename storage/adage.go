@@ -13,10 +13,10 @@ import (
 )
 
 // Reuse components to speed up serialization and deserialization
-var buffer = new(bytes.Buffer)
-var encoder = gob.NewEncoder(buffer)
-var decoder = gob.NewDecoder(buffer)
-var mutex sync.Mutex
+var adageBuffer = new(bytes.Buffer)
+var adageEncoder = gob.NewEncoder(adageBuffer)
+var adageDecoder = gob.NewDecoder(adageBuffer)
+var adageMutex sync.Mutex
 
 // Adage is an entry in the database
 type Adage struct {
@@ -87,25 +87,25 @@ func (adage *Adage) Insert(db *bolt.DB) error {
 
 // Serialize converts the structure to a byte array for saving into the database
 func (adage *Adage) Serialize() ([]byte, error) {
-	mutex.Lock()
-	buffer.Reset()
-	err := encoder.Encode(*adage)
+	adageMutex.Lock()
+	adageBuffer.Reset()
+	err := adageEncoder.Encode(*adage)
 	if err != nil {
 		return nil, err
 	}
-	data := buffer.Bytes()
-	mutex.Unlock()
+	data := adageBuffer.Bytes()
+	adageMutex.Unlock()
 	return data, nil
 }
 
 // DeserializeAdage converts a byte array into an Adage struct
 func DeserializeAdage(data []byte) (*Adage, error) {
-	mutex.Lock()
-	buffer.Reset()
-	buffer.Write(data)
+	adageMutex.Lock()
+	adageBuffer.Reset()
+	adageBuffer.Write(data)
 	adage := new(Adage)
-	err := decoder.Decode(adage)
-	mutex.Unlock()
+	err := adageDecoder.Decode(adage)
+	adageMutex.Unlock()
 	return adage, err
 }
 
