@@ -55,7 +55,7 @@ func GuessEditor() string {
 
 // ParseFortuneFile reads a fortune formated file and calls a callback for each
 // parsed adage
-func ParseFortuneFile(inputFile string, onAdage func(adage string)) error {
+func ParseFortuneFile(inputFile string, onAdage func(adage string) error) error {
 	f, err := os.Open(inputFile)
 	if err != nil {
 		return err
@@ -68,7 +68,11 @@ func ParseFortuneFile(inputFile string, onAdage func(adage string)) error {
 	for err != io.EOF {
 		line, err = reader.ReadString('\n')
 		if line == "%\n" {
-			onAdage(adage)
+			// If the callback returns an error then we should abort
+			err := onAdage(adage)
+			if err != nil {
+				return err
+			}
 			adage = ""
 		} else {
 			adage += line

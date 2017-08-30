@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"errors"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -42,12 +43,22 @@ How did we do?`
 
 	tmpFile.Write([]byte(data))
 	adages := []string{}
-	err := ParseFortuneFile(tmpFile.Name(), func(adage string) {
+	err := ParseFortuneFile(tmpFile.Name(), func(adage string) error {
 		adages = append(adages, adage)
+		return nil
 	})
 	assert.Nil(t, err)
 	assert.Len(t, adages, 3)
 	assert.Equal(t, "This is\n\na\ntest\n", adages[0])
 	assert.Equal(t, "Another%test\n", adages[1])
 	assert.Equal(t, "How did we do?", adages[2])
+
+	count := 0
+	err = ParseFortuneFile(tmpFile.Name(), func(adage string) error {
+		count += 1
+		return errors.New("From Test")
+	})
+	assert.NotNil(t, err)
+	assert.Equal(t, "From Test", err.Error())
+	assert.Equal(t, 1, count)
 }

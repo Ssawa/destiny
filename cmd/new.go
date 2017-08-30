@@ -100,7 +100,31 @@ func importSingle(cmd *cobra.Command, args []string) error {
 }
 
 func importMultiple(cmd *cobra.Command, args []string) error {
+	utils.Verbose.Println("Opening database...")
+	db, err := utils.OpenReadWrite(viper.GetString("database"))
+	if err != nil {
+		return err
+	}
 
+	utils.Verbose.Println("Parsing file", addImport)
+	err = utils.ParseFortuneFile(addImport, func(body string) error {
+		utils.Verbose.Println("Adage body is:", body)
+		if body == "" {
+			utils.Verbose.Println("Adage body is empty. Not saving.")
+			return nil
+		}
+
+		adage := storage.Adage{
+			Body:      body,
+			Tags:      addTags,
+			Author:    author,
+			Source:    addSource,
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		}
+		return adage.Insert(db)
+	})
+	return err
 }
 
 func init() {
