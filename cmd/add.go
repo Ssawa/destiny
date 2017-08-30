@@ -1,8 +1,8 @@
 package cmd
 
 import (
+	"github.com/Ssawa/bolt"
 	"github.com/Ssawa/destiny/utils"
-	"github.com/boltdb/bolt"
 	"github.com/satori/go.uuid"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"

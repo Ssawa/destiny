@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/boltdb/bolt"
+	"github.com/Ssawa/bolt"
 	"github.com/stretchr/testify/assert"
 )
 

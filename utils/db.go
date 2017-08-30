@@ -3,7 +3,7 @@ package utils
 import (
 	"fmt"
 
-	"github.com/boltdb/bolt"
+	"github.com/Ssawa/bolt"
 )
 
 // OpenReadWrite opens a Bolt DB database with exclusive Read/Write access.

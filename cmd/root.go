@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/Ssawa/bolt"
 	"github.com/Ssawa/destiny/utils"
-	"github.com/boltdb/bolt"
 
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
