@@ -1,0 +1,31 @@
+#!/usr/bin/env python3
+from __future__ import print_function
+import os
+import argparse
+import subprocess
+
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
+parser = argparse.ArgumentParser(description="Benchmark the performance of components for destiny")
+parser.add_argument("--destiny", "-d", default="./destiny", dest="destiny", help="The destiny binary to execute")
+parser.add_argument("--count", "-c", type=int, default=100000, dest="count", help="Number of entries to add to the database")
+parser.add_argument("--db", default="./benchmark.db", dest="db", help="The database file to use")
+options = parser.parse_args()
+
+def destiny(*args):
+    args = [options.destiny, "--db", options.db] + list(args)
+    subprocess.call(args)
+
+def destiny_add(quote, *tags):
+    args = ["add", quote]
+    for tag in tags:
+        args.append("-t")
+        args.append(tag)
+    destiny(*args)
+
+def main():
+    destiny_add("hello", "Test")
+
+
+if __name__ == "__main__":
+    main()

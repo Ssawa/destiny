@@ -86,6 +86,8 @@ func init() {
 
 	RootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", "config file (default is $HOME/.destiny.yaml)")
 	RootCmd.PersistentFlags().BoolVarP(&useVerbose, "verbose", "v", false, "Print verbose output")
+	RootCmd.PersistentFlags().String("db", "", "Database to use")
+	viper.BindPFlag("database", RootCmd.PersistentFlags().Lookup("db"))
 
 	RootCmd.Flags().StringArrayVarP(&rootTags, "tag", "t", nil, "A tag to search for in the query")
 	RootCmd.Flags().StringArrayVarP(&rootExcludes, "exclude", "x", nil, "What tags should be excluded from the result set?")
