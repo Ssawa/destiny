@@ -13,21 +13,23 @@ import (
 	"github.com/spf13/viper"
 )
 
-var tags []string
+var addTags []string
+var author string
+var addSource string
 
 // addCmd represents the add command
 var addCmd = &cobra.Command{
 	Use:   "new",
 	Short: "Add a new adage",
 	Long:  `Add and store a new adage.`,
-	Example: `# Add a new quote, "Hello, World!" with the tags "boring" and "offensive"
-destiny add "Hello, World!" -t boring -t offensive
+	Example: `# Add a new quote, "Hello, World!" with the tags "boring" and "offensive" and an Author and source
+destiny add "Hello, World!" -t boring -t offensive --author "CJ DiMaggio" --source "My Brain"
 
 # Will open up your $EDITOR in which to type your quote
-destiny add -t boring -t offensive
+destiny add -t boring -t offensive --author "CJ DiMaggio" --source "My Brain"
 
 # Pass in quote via stdin
-echo "Hello, World!" | destiny add -t boring -t offensive
+echo "Hello, World!" | destiny add -t boring -t offensive --author "CJ DiMaggio" --source "My Brain"
 `,
 
 	Aliases: []string{"add", "create"},
@@ -72,7 +74,9 @@ echo "Hello, World!" | destiny add -t boring -t offensive
 
 		adage := storage.Adage{
 			Body:      body,
-			Tags:      tags,
+			Tags:      addTags,
+			Author:    author,
+			Source:    addSource,
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 		}
@@ -90,5 +94,8 @@ echo "Hello, World!" | destiny add -t boring -t offensive
 func init() {
 	RootCmd.AddCommand(addCmd)
 
-	addCmd.Flags().StringArrayVarP(&tags, "tag", "t", nil, "Help message for toggle")
+	addCmd.Flags().StringArrayVarP(&addTags, "tag", "t", nil, "Add a tag to the adage")
+	addCmd.Flags().StringVarP(&author, "author", "a", "", "Set the author of the adage")
+	addCmd.Flags().StringVarP(&addSource, "source", "s", "", "Set the source of the adage")
+
 }

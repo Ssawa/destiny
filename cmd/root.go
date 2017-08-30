@@ -23,6 +23,10 @@ var cfgFile string
 
 var useVerbose bool
 
+var rootTags []string
+var rootExcludes []string
+var rootExclusive bool
+
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
 	Use:   "destiny",
@@ -47,7 +51,7 @@ database.
 			return err
 		}
 
-		adage, err := storage.GetAdage(db)
+		adage, err := storage.GetAdageFromAll(db)
 		if err != nil {
 			return err
 		}
@@ -76,6 +80,10 @@ func init() {
 
 	RootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", "config file (default is $HOME/.destiny.yaml)")
 	RootCmd.PersistentFlags().BoolVarP(&useVerbose, "verbose", "v", false, "Print verbose output")
+
+	RootCmd.Flags().StringArrayVarP(&rootTags, "tag", "t", nil, "A tag to search for in the query")
+	RootCmd.Flags().StringArrayVarP(&rootExcludes, "exclude", "x", nil, "What tags should be excluded from the result set?")
+	RootCmd.Flags().BoolVarP(&rootExclusive, "exclusive", "e", false, "Should we use an AND query for tags? (defaults to OR)")
 
 	// Configuration options
 	var err error

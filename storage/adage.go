@@ -35,7 +35,7 @@ func GetAdage(db *bolt.DB) (*Adage, error) {
 	var keys [][]byte
 
 	err := db.View(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket(adagesBucket)
+		bucket := tx.Bucket(adagesKey)
 		if bucket == nil {
 			utils.Verbose.Println("Adages bucket does not exist in the database")
 			return nil
@@ -69,7 +69,7 @@ func (adage *Adage) Insert(db *bolt.DB) error {
 
 	utils.Verbose.Println("Starting transaction")
 	return db.Update(func(tx *bolt.Tx) error {
-		bucket, err := tx.CreateBucketIfNotExists(adagesBucket)
+		dataBucket, err := tx.CreateBucketIfNotExists(adagesKey)
 		if err != nil {
 			return err
 		}
@@ -80,8 +80,27 @@ func (adage *Adage) Insert(db *bolt.DB) error {
 			return err
 		}
 
-		err = bucket.Put(id.Bytes(), data)
-		return err
+		err = dataBucket.Put(id.Bytes(), data)
+		if err != nil {
+			return err
+		}
+
+		// Update our tags indexes
+		tagsBucket, err := tx.CreateBucketIfNotExists(tagsKey)
+		if err != nil {
+			return err
+		}
+
+		for _, tag := range adage.Tags {
+			utils.Verbose.Println("Saving index for tag", tag)
+			index, err := tagsBucket.CreateBucketIfNotExists([]byte(tag))
+			if err != nil {
+				return err
+			}
+			err = index.Put(id.Bytes(), []byte{})
+		}
+
+		return nil
 	})
 }
 
