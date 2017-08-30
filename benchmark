@@ -54,9 +54,13 @@ def main():
         print("Adding entries to destiny")
         start = time.clock()
         destiny_add(input_file=temp.name)
+        print("Added a group")
         destiny_add(input_file=temp.name, tags=["a", "b", "c", "d", "e", "f", "g", "h"])
+        print("Added a group")
         destiny_add(input_file=temp.name, tags=["a", "b"])
+        print("Added a group")
         destiny_add(input_file=temp.name, tags=["c", "d", "e"])
+        print("Added a group")
         destiny_add(input_file=temp.name, tags=["f", "g", "h"])
         print("Finished inserting in: %s" % (time.clock() - start))
 
