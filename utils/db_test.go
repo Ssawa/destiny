@@ -45,7 +45,7 @@ func TestOpenReadOnly(t *testing.T) {
 	defer os.RemoveAll(tmpDir)
 
 	db, err := OpenReadOnly(filepath.Join(tmpDir, "nested-folder", "test.db"))
-	db.Close()
+	defer db.Close()
 
 	assert.Nil(t, err)
 	assert.NotNil(t, db)
@@ -59,5 +59,13 @@ func TestOpenReadOnly(t *testing.T) {
 		err = b.Put([]byte("Test"), []byte("Hello world"))
 		return err
 	})
+	assert.NotNil(t, err)
+	assert.Equal(t, "database is in read-only mode", err.Error())
+
+	// Try opening up another ReadOnly view
+	db, err = OpenReadOnly(filepath.Join(tmpDir, "nested-folder", "test.db"))
+	defer db.Close()
+
 	assert.Nil(t, err)
+	assert.NotNil(t, db)
 }

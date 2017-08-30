@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/Ssawa/bolt"
+	"github.com/Ssawa/destiny/storage"
 	"github.com/Ssawa/destiny/utils"
 
 	homedir "github.com/mitchellh/go-homedir"
@@ -46,30 +46,10 @@ database.
 		if err != nil {
 			return err
 		}
-		utils.Verbose.Println("Database opened")
 
-		var keys [][]byte
-		if err = db.View(func(tx *bolt.Tx) error {
-			bucket := tx.Bucket([]byte("adages"))
-			c := bucket.Cursor()
-
-			utils.Verbose.Println("Iterating over keys")
-			for k, _ := c.First(); k != nil; k, _ = c.Next() {
-				keys = append(keys, k)
-			}
-
-			choice := keys[rand.Intn(len(keys))]
-
-			utils.Verbose.Println("Chose: ", choice)
-
-			adage := bucket.Get(choice)
-			fmt.Println(string(adage))
-
-			return nil
-		}); err != nil {
-			return err
-		}
-		return nil
+		adage, err := storage.GetAdage(db)
+		fmt.Println(adage)
+		return err
 	},
 
 	// Don't show usage when the Run function returns an error

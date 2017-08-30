@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"fmt"
+	"os"
 
 	"github.com/Ssawa/bolt"
 )
@@ -13,19 +13,30 @@ func OpenReadWrite(databasePath string) (*bolt.DB, error) {
 
 // OpenReadOnly opens a Bolt DB database with shared Read only access.
 func OpenReadOnly(databasePath string) (*bolt.DB, error) {
-	// So when you try to open a Bolt database that doesn't exist it will get a
-	// filedescriptor error and return a nil database. *However*
-	db, _ := openDatabase(databasePath, &bolt.Options{ReadOnly: true})
-	if db != nil {
-		db.Close()
+	db, err := openDatabase(databasePath, &bolt.Options{ReadOnly: true})
+	if err != nil {
+		if _, isWriteError := err.(*os.PathError); isWriteError {
+			// BoltDB can't initialize a new database in ReadOnly mode (in fact
+			// it gets caught in a weird state, which is why we're using my personal
+			// fork until the PR gets accepted). We could either return an error
+			// or we can create it using ReadWrite mode. Both have their pros and
+			// cons. We'll be creating the database, as this simplifies some error
+			// handling (the main point of this function) and also forces us to make
+			// sure that we're handling incomplete database initialization throughout
+			// our entire codebase
+			Verbose.Println("Tried to open a non-existant database.")
+			Verbose.Println("Creating database in ReadWrite mode")
+			db, err = OpenReadWrite(databasePath)
+			if err != nil {
+				Verbose.Println("Could not create database", err)
+			} else {
+				Verbose.Println("Closing ReadWrite database and opening again as ReadOnly")
+				db.Close()
+				db, err = openDatabase(databasePath, &bolt.Options{ReadOnly: true})
+			}
+		}
 	}
-	fmt.Println("Opening again")
-	return OpenReadWrite(databasePath)
-	// If the database doesn't exist yet we'll get an error
-	// fmt.Println(os.IsNotExist(err))
-	// pathErr := err.(*os.PathError)
-	// fmt.Println(pathErr.Op)
-	// fmt.Println(reflect.TypeOf(pathErr.Err))
+	return db, err
 }
 
 // openDatabase attempts to open the bolt database with the given options
