@@ -51,7 +51,13 @@ database.
 			return err
 		}
 
-		adage, err := storage.GetAdageFromAll(db)
+		var adage *storage.Adage
+		if len(rootTags) == 0 {
+			adage, err = storage.GetAdageFromAll(db)
+		} else {
+			adage, err = storage.GetAdageFromCategories(db, rootTags, rootExcludes)
+		}
+
 		if err != nil {
 			return err
 		}
