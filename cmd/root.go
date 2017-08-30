@@ -46,6 +46,7 @@ database.
 		if err != nil {
 			return err
 		}
+		utils.Verbose.Println("Database opened")
 
 		var keys [][]byte
 		if err = db.View(func(tx *bolt.Tx) error {

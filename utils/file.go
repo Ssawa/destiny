@@ -7,7 +7,7 @@ import "path"
 // that it's containing directory exists
 func EnsureDirectory(filepath string) error {
 	dir, _ := path.Split(filepath)
-	if exists, err := Exists(dir); err != nil {
+	if exists, err := PathExists(dir); err != nil {
 		return err
 	} else if !exists {
 		err := os.MkdirAll(dir, 0700)
@@ -16,8 +16,8 @@ func EnsureDirectory(filepath string) error {
 	return nil
 }
 
-// Exists checks if a file path exists
-func Exists(path string) (bool, error) {
+// PathExists checks if a file path exists
+func PathExists(path string) (bool, error) {
 	_, err := os.Stat(path)
 	if err == nil {
 		return true, nil
