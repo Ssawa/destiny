@@ -53,7 +53,7 @@ database.
 
 		var adage *storage.Adage
 		if len(rootTags) == 0 {
-			adage, err = storage.GetAdageFromAll(db)
+			adage, err = storage.GetAdageFromAll(db, rootExcludes)
 		} else {
 			adage, err = storage.GetAdageFromCategories(db, rootTags, rootExcludes, rootExclusive)
 		}
