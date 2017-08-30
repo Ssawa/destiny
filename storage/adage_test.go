@@ -10,6 +10,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+type serializeFunc func() ([]byte, error)
+type deSerializeFunc func(data []byte) (*Adage, error)
+
 func TestAdageSerializeDeSerialize(t *testing.T) {
 	adage := Adage{
 		ID:        uuid.NewV4(),
@@ -21,7 +24,7 @@ func TestAdageSerializeDeSerialize(t *testing.T) {
 		UpdatedAt: time.Now(),
 	}
 
-	testSerializeDeserialize := func(serialize func() ([]byte, error), deserialize func(data []byte) (*Adage, error)) {
+	testSerializeDeserialize := func(serialize serializeFunc, deserialize deSerializeFunc) {
 		data, err := serialize()
 		assert.Nil(t, err)
 
@@ -37,62 +40,42 @@ func TestAdageSerializeDeSerialize(t *testing.T) {
 		assert.True(t, adage.UpdatedAt.Equal(adage2.UpdatedAt))
 	}
 
-	iterations := 10000
-
-	start := time.Now()
-	for i := 0; i < iterations; i++ {
-		testSerializeDeserialize(adage.Serialize, DeserializeAdage)
-	}
-	elapsed := time.Since(start)
-	log.Printf("Optimized Serial Took %s", elapsed)
-
-	start = time.Now()
-	for i := 0; i < iterations; i++ {
-		testSerializeDeserialize(adage.SerializeSlow, DeserializeAdageSlow)
-	}
-	elapsed = time.Since(start)
-	log.Printf("Slow Serial Took %s", elapsed)
-
-	workers := 10
-	jobs := make(chan *Adage, 10)
-	wg := sync.WaitGroup{}
-	start = time.Now()
-	for i := 0; i < workers; i++ {
-		go func() {
-			for a := range jobs {
-				testSerializeDeserialize(a.SerializeSlow, DeserializeAdageSlow)
-				wg.Done()
-			}
-		}()
+	testSerial := func(description string, iterations int, serialize serializeFunc, deserialize deSerializeFunc) {
+		start := time.Now()
+		for i := 0; i < iterations; i++ {
+			testSerializeDeserialize(serialize, deserialize)
+		}
+		elapsed := time.Since(start)
+		log.Printf("%s: %s", description, elapsed)
 	}
 
-	for i := 0; i < iterations; i++ {
-		wg.Add(1)
-		jobs <- &adage
-	}
-	wg.Wait()
-	elapsed = time.Since(start)
-	log.Printf("Slow Parallel Took %s", elapsed)
+	testParallel := func(description string, workers int, iterations int, serialize serializeFunc, deserialize deSerializeFunc) {
+		jobs := make(chan int, 10)
+		wg := sync.WaitGroup{}
+		start := time.Now()
+		for i := 0; i < workers; i++ {
+			go func() {
+				for _ = range jobs {
+					testSerializeDeserialize(serialize, deserialize)
+					wg.Done()
+				}
+			}()
+		}
 
-	workers = 10
-	jobs = make(chan *Adage, 10)
-	wg = sync.WaitGroup{}
-	start = time.Now()
-	for i := 0; i < workers; i++ {
-		go func() {
-			for a := range jobs {
-				testSerializeDeserialize(a.Serialize, DeserializeAdage)
-				wg.Done()
-			}
-		}()
+		for i := 0; i < iterations; i++ {
+			wg.Add(1)
+			jobs <- i
+		}
+		wg.Wait()
+		elapsed := time.Since(start)
+		log.Printf("%s: %s", description, elapsed)
 	}
 
-	for i := 0; i < iterations; i++ {
-		wg.Add(1)
-		jobs <- &adage
-	}
-	wg.Wait()
-	elapsed = time.Since(start)
-	log.Printf("Optimized Parallel Took %s", elapsed)
+	testSerial("Cached Serial One Iteration", 1, adage.Serialize, DeserializeAdage)
+	testSerial("Direct Serial One Iteration", 1, adage.SerializeDirect, DeserializeAdageDirect)
 
+	testSerial("Cached Serial Many Iterations", 10000, adage.Serialize, DeserializeAdage)
+	testSerial("Direct Serial Many Iterations", 10000, adage.SerializeDirect, DeserializeAdageDirect)
+	testParallel("Cached Parallel Many Iterations", 10, 10000, adage.Serialize, DeserializeAdage)
+	testParallel("Direct Parallel Many Iterations", 10, 10000, adage.SerializeDirect, DeserializeAdageDirect)
 }

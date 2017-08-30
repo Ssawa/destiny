@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/Ssawa/destiny/storage"
 	"github.com/Ssawa/destiny/utils"
@@ -35,12 +36,12 @@ echo "Hello, World!" | destiny add -t boring -t offensive
 
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// Ingest our adage from one of our supported methods
-		var adage string
+		var body string
 
 		if len(args) > 0 {
 			// If we were passed in an adage as an argument then use that
 			utils.Verbose.Println("Grabbing adage from arguments")
-			adage = args[0]
+			body = args[0]
 		} else {
 			// If not then test whether we're getting it from stdin. Taken from
 			// https://stackoverflow.com/questions/22744443/check-if-there-is-something-to-read-on-stdin-in-golang
@@ -51,7 +52,7 @@ echo "Hello, World!" | destiny add -t boring -t offensive
 				if err != nil {
 					return err
 				}
-				adage = strings.TrimSpace(string(data))
+				body = strings.TrimSpace(string(data))
 			} else {
 				// Let's spawn a text editor and get our input from there
 				utils.Verbose.Println("Grabbing adage from text editor")
@@ -59,14 +60,21 @@ echo "Hello, World!" | destiny add -t boring -t offensive
 				if err != nil {
 					return err
 				}
-				adage = strings.TrimSpace(string(data))
+				body = strings.TrimSpace(string(data))
 			}
 		}
 
-		utils.Verbose.Println("Adage is:", adage)
-		if adage == "" {
-			fmt.Println("Adage is empty. Not saving.")
+		utils.Verbose.Println("Adage body is:", body)
+		if body == "" {
+			fmt.Println("Adage body is empty. Not saving.")
 			return nil
+		}
+
+		adage := storage.Adage{
+			Body:      body,
+			Tags:      tags,
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
 		}
 
 		utils.Verbose.Println("Opening database...")
@@ -75,7 +83,7 @@ echo "Hello, World!" | destiny add -t boring -t offensive
 			return err
 		}
 
-		return storage.AddAdage(db, adage, tags)
+		return adage.Insert(db)
 	},
 }
 

@@ -3,9 +3,12 @@ package storage
 import (
 	"bytes"
 	"encoding/gob"
+	"math/rand"
 	"sync"
 	"time"
 
+	"github.com/Ssawa/bolt"
+	"github.com/Ssawa/destiny/utils"
 	"github.com/satori/go.uuid"
 )
 
@@ -24,6 +27,62 @@ type Adage struct {
 	Source    string
 	CreatedAt time.Time
 	UpdatedAt time.Time
+}
+
+// GetAdage gets a random adage from the database
+func GetAdage(db *bolt.DB) (*Adage, error) {
+	var adage *Adage
+	var keys [][]byte
+
+	err := db.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(adagesBucket)
+		if bucket == nil {
+			utils.Verbose.Println("Adages bucket does not exist in the database")
+			return nil
+		}
+		c := bucket.Cursor()
+
+		utils.Verbose.Println("Iterating over keys")
+		for k, _ := c.First(); k != nil; k, _ = c.Next() {
+			keys = append(keys, k)
+		}
+
+		choice := keys[rand.Intn(len(keys))]
+
+		utils.Verbose.Println("Chose: ", choice)
+
+		var err error
+		adage, err = DeserializeAdage(bucket.Get(choice))
+
+		return err
+	})
+
+	return adage, err
+}
+
+// Insert the adage to the database
+func (adage *Adage) Insert(db *bolt.DB) error {
+	utils.Verbose.Println("Inserting adage")
+
+	id := uuid.NewV1()
+	utils.Verbose.Println("UUID generated: ", id)
+
+	utils.Verbose.Println("Starting transaction")
+	return db.Update(func(tx *bolt.Tx) error {
+		bucket, err := tx.CreateBucketIfNotExists(adagesBucket)
+		if err != nil {
+			return err
+		}
+
+		utils.Verbose.Println("Saving to database")
+		data, err := adage.Serialize()
+		if err != nil {
+			return err
+		}
+
+		err = bucket.Put(id.Bytes(), data)
+		return err
+	})
 }
 
 // Serialize converts the structure to a byte array for saving into the database
@@ -50,10 +109,10 @@ func DeserializeAdage(data []byte) (*Adage, error) {
 	return adage, err
 }
 
-// SerializeSlow is another implementation of Serialize that doesn't reuse cached
+// SerializeDirect is another implementation of Serialize that doesn't reuse cached
 // components. See adage_test's TestAdageSerializeDeSerialize for an example of
 // the time difference.
-func (adage *Adage) SerializeSlow() ([]byte, error) {
+func (adage *Adage) SerializeDirect() ([]byte, error) {
 	buffer := new(bytes.Buffer)
 	encoder := gob.NewEncoder(buffer)
 	err := encoder.Encode(*adage)
@@ -64,10 +123,10 @@ func (adage *Adage) SerializeSlow() ([]byte, error) {
 	return buffer.Bytes(), nil
 }
 
-// DeserializeAdageSlow is another implementation of DeserializeAdage that doesn't
+// DeserializeAdageDirect is another implementation of DeserializeAdage that doesn't
 // reuse cached components. See adage_test's TestAdageSerializeDeSerialize for an
 // example of the time difference.
-func DeserializeAdageSlow(data []byte) (*Adage, error) {
+func DeserializeAdageDirect(data []byte) (*Adage, error) {
 	buffer := bytes.NewBuffer(data)
 	decoder := gob.NewDecoder(buffer)
 	adage := new(Adage)

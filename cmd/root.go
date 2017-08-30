@@ -48,8 +48,14 @@ database.
 		}
 
 		adage, err := storage.GetAdage(db)
-		fmt.Println(adage)
-		return err
+		if err != nil {
+			return err
+		}
+
+		if adage != nil {
+			fmt.Println(adage.Body)
+		}
+		return nil
 	},
 
 	// Don't show usage when the Run function returns an error
