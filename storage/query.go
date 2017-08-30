@@ -41,32 +41,26 @@ func GetAdageFromAll(db *bolt.DB) (*Adage, error) {
 	return adage, err
 }
 
-func GetAdageFromCategories(db *bolt.DB, tags []string, excludes []string) (*Adage, error) {
+func GetAdageFromCategories(db *bolt.DB, tags []string, excludes []string, exclusive bool) (*Adage, error) {
 	var adage *Adage
 
 	err := db.View(func(tx *bolt.Tx) error {
-		utils.Verbose.Println("Picking a random category")
-		var tagChoice *bolt.Bucket
-		tagChoiceVal := int64(-1)
-
 		tagsBucket := tx.Bucket(tagsKey)
 		if tagsBucket == nil {
 			utils.Verbose.Println("No tags bucket. Returning")
 			return nil
 		}
+		utils.Verbose.Println("Gathering tags that exist")
+		tagBuckets := []*bolt.Bucket{}
 		for _, tag := range tags {
 			t := tagsBucket.Bucket([]byte(tag))
 			if t != nil {
-				val := rand.Int63()
-				if tagChoiceVal < val {
-					tagChoice = t
-					tagChoiceVal = val
-				}
+				tagBuckets = append(tagBuckets, t)
 			}
 		}
 
-		if tagChoice == nil {
-			utils.Verbose.Println("No valid tag. Returning")
+		if len(tagBuckets) == 0 {
+			utils.Verbose.Println("No valid tags. Returning")
 			return nil
 		}
 
@@ -79,8 +73,15 @@ func GetAdageFromCategories(db *bolt.DB, tags []string, excludes []string) (*Ada
 			}
 		}
 
-		utils.Verbose.Println("Picking random element from tag")
-		c := tagChoice.Cursor()
+		utils.Verbose.Println("Picking random element")
+
+		adagesBucket := tx.Bucket(adagesKey)
+		if adagesBucket == nil {
+			utils.Verbose.Println("Adages bucket does not exist in the database")
+			return nil
+		}
+		c := adagesBucket.Cursor()
+
 		var choice []byte
 		choiceVal := int64(-1)
 	FindChoice:
@@ -92,6 +93,12 @@ func GetAdageFromCategories(db *bolt.DB, tags []string, excludes []string) (*Ada
 				}
 			}
 
+			for _, t := range tagBuckets {
+				if t.Get(k) == nil {
+					continue FindChoice
+				}
+			}
+
 			val := rand.Int63()
 			if choiceVal < val {
 				choice = k
@@ -99,11 +106,6 @@ func GetAdageFromCategories(db *bolt.DB, tags []string, excludes []string) (*Ada
 			}
 		}
 
-		adagesBucket := tx.Bucket(adagesKey)
-		if adagesBucket == nil {
-			utils.Verbose.Println("Adages bucket does not exist in the database")
-			return nil
-		}
 		utils.Verbose.Println("Chose: ", choice)
 		if choice == nil {
 			return nil

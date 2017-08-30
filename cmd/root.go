@@ -55,7 +55,7 @@ database.
 		if len(rootTags) == 0 {
 			adage, err = storage.GetAdageFromAll(db)
 		} else {
-			adage, err = storage.GetAdageFromCategories(db, rootTags, rootExcludes)
+			adage, err = storage.GetAdageFromCategories(db, rootTags, rootExcludes, rootExclusive)
 		}
 
 		if err != nil {
