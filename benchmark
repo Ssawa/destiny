@@ -3,6 +3,7 @@ from __future__ import print_function
 import os
 import argparse
 import subprocess
+import time
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
@@ -24,8 +25,19 @@ def destiny_add(quote, *tags):
     destiny(*args)
 
 def main():
-    destiny_add("hello", "Test")
+    # try:
+    #     os.remove(options.db)
+    # except Exception:
+    #     pass
 
+    print("Adding %s entries" % options.count)
+    start = time.clock()
+    for i in range(options.count):
+        print("Adding entry: %s" % i)
+    
+        destiny_add("hello", "Test")
+    elapsed = time.clock() - start
+    print("Finished inserting in: %s" % elapsed)
 
 if __name__ == "__main__":
     main()

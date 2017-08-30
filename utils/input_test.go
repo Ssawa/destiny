@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"io/ioutil"
 	"os"
 	"testing"
 
@@ -24,4 +25,29 @@ func TestGetInputFromEditorUNIX(t *testing.T) {
 	os.Setenv("EDITOR", "touch")
 	_, err := GetInputFromEditor("")
 	assert.Nil(t, err)
+}
+
+func TestParseFortuneFile(t *testing.T) {
+	tmpFile, _ := ioutil.TempFile("", "")
+	defer os.Remove(tmpFile.Name())
+
+	data := `This is
+
+a
+test
+%
+Another%test
+%
+How did we do?`
+
+	tmpFile.Write([]byte(data))
+	adages := []string{}
+	err := ParseFortuneFile(tmpFile.Name(), func(adage string) {
+		adages = append(adages, adage)
+	})
+	assert.Nil(t, err)
+	assert.Len(t, adages, 3)
+	assert.Equal(t, "This is\n\na\ntest\n", adages[0])
+	assert.Equal(t, "Another%test\n", adages[1])
+	assert.Equal(t, "How did we do?", adages[2])
 }

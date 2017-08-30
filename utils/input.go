@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"bufio"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -49,4 +51,34 @@ func GuessEditor() string {
 		editor = "vim"
 	}
 	return editor
+}
+
+// ParseFortuneFile reads a fortune formated file and calls a callback for each
+// parsed adage
+func ParseFortuneFile(inputFile string, onAdage func(adage string)) error {
+	f, err := os.Open(inputFile)
+	if err != nil {
+		return err
+	}
+
+	err = nil
+	reader := bufio.NewReader(f)
+	adage := ""
+	var line string
+	for err != io.EOF {
+		line, err = reader.ReadString('\n')
+		if line == "%\n" {
+			onAdage(adage)
+			adage = ""
+		} else {
+			adage += line
+		}
+	}
+
+	// If we have any trailing data then we want to handle that too
+	if adage != "" {
+		onAdage(adage)
+	}
+
+	return nil
 }
