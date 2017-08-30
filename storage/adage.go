@@ -3,6 +3,7 @@ package storage
 import (
 	"bytes"
 	"encoding/gob"
+	"encoding/json"
 	"math/rand"
 	"sync"
 	"time"
@@ -104,51 +105,21 @@ func (adage *Adage) Insert(db *bolt.DB) error {
 	})
 }
 
-// Serialize converts the structure to a byte array for saving into the database
+// Serialize converts the structure to a byte array for saving into the database.
+// We're just going to serialize it to JSON for now. I messed around with the
+// gob package and it's actually slower to initialize all the object and buffers
+// for each serialization and trying to reuse components can lead to corrupt
+// binaries. The other alternative is something like Protobufs but I'm not sure
+// if it's worth the added complexity. Right now we should be trying to make sure
+// we almost never serialize/deserialize underlying data and instead do everything
+// through indexes.
 func (adage *Adage) Serialize() ([]byte, error) {
-	adageMutex.Lock()
-	adageBuffer.Reset()
-	err := adageEncoder.Encode(*adage)
-	if err != nil {
-		return nil, err
-	}
-	data := adageBuffer.Bytes()
-	adageMutex.Unlock()
-	return data, nil
+	return json.Marshal(*adage)
 }
 
 // DeserializeAdage converts a byte array into an Adage struct
 func DeserializeAdage(data []byte) (*Adage, error) {
-	adageMutex.Lock()
-	adageBuffer.Reset()
-	adageBuffer.Write(data)
 	adage := new(Adage)
-	err := adageDecoder.Decode(adage)
-	adageMutex.Unlock()
-	return adage, err
-}
-
-// SerializeDirect is another implementation of Serialize that doesn't reuse cached
-// components. See adage_test's TestAdageSerializeDeSerialize for an example of
-// the time difference.
-func (adage *Adage) SerializeDirect() ([]byte, error) {
-	buffer := new(bytes.Buffer)
-	encoder := gob.NewEncoder(buffer)
-	err := encoder.Encode(*adage)
-	if err != nil {
-		return nil, err
-	}
-
-	return buffer.Bytes(), nil
-}
-
-// DeserializeAdageDirect is another implementation of DeserializeAdage that doesn't
-// reuse cached components. See adage_test's TestAdageSerializeDeSerialize for an
-// example of the time difference.
-func DeserializeAdageDirect(data []byte) (*Adage, error) {
-	buffer := bytes.NewBuffer(data)
-	decoder := gob.NewDecoder(buffer)
-	adage := new(Adage)
-	err := decoder.Decode(adage)
+	err := json.Unmarshal(data, adage)
 	return adage, err
 }

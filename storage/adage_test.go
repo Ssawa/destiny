@@ -1,8 +1,6 @@
 package storage
 
 import (
-	"bytes"
-	"encoding/gob"
 	"log"
 	"sync"
 	"testing"
@@ -16,6 +14,9 @@ type serializeFunc func() ([]byte, error)
 type deSerializeFunc func(data []byte) (*Adage, error)
 
 func TestAdageSerializeDeSerialize(t *testing.T) {
+	// We want to test out and profile different serialization strategies
+	// so we'll try to structure our tests to be as reusable as possible
+
 	adage := Adage{
 		ID:        uuid.NewV4(),
 		Body:      "Test Body",
@@ -73,27 +74,9 @@ func TestAdageSerializeDeSerialize(t *testing.T) {
 		log.Printf("%s: %s", description, elapsed)
 	}
 
-	adageBuffer = new(bytes.Buffer)
-	adageEncoder = gob.NewEncoder(adageBuffer)
-	adageDecoder = gob.NewDecoder(adageBuffer)
-	adageMutex = sync.Mutex{}
+	testSerial("JSON Serial One Iteration", 1, adage.Serialize, DeserializeAdage)
 
-	testSerial("Cached Serial One Iteration", 1, adage.Serialize, DeserializeAdage)
-	testSerial("Direct Serial One Iteration", 1, adage.SerializeDirect, DeserializeAdageDirect)
+	testSerial("JSON Serial Many Iterations", 10000, adage.Serialize, DeserializeAdage)
 
-	adageBuffer = new(bytes.Buffer)
-	adageEncoder = gob.NewEncoder(adageBuffer)
-	adageDecoder = gob.NewDecoder(adageBuffer)
-	adageMutex = sync.Mutex{}
-
-	testSerial("Cached Serial Many Iterations", 10000, adage.Serialize, DeserializeAdage)
-	testSerial("Direct Serial Many Iterations", 10000, adage.SerializeDirect, DeserializeAdageDirect)
-
-	adageBuffer = new(bytes.Buffer)
-	adageEncoder = gob.NewEncoder(adageBuffer)
-	adageDecoder = gob.NewDecoder(adageBuffer)
-	adageMutex = sync.Mutex{}
-
-	testParallel("Cached Parallel Many Iterations", 10, 10000, adage.Serialize, DeserializeAdage)
-	testParallel("Direct Parallel Many Iterations", 10, 10000, adage.SerializeDirect, DeserializeAdageDirect)
+	testParallel("JSON Parallel Many Iterations", 10, 10000, adage.Serialize, DeserializeAdage)
 }

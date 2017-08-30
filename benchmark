@@ -4,40 +4,61 @@ import os
 import argparse
 import subprocess
 import time
+import tempfile
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 parser = argparse.ArgumentParser(description="Benchmark the performance of components for destiny")
 parser.add_argument("--destiny", "-d", default="./destiny", dest="destiny", help="The destiny binary to execute")
-parser.add_argument("--count", "-c", type=int, default=100000, dest="count", help="Number of entries to add to the database")
+parser.add_argument("--count", "-c", type=int, default=100000, dest="count", help="Number of entries to add to the database (This isn't exactly the ultimate number used. More just the magnitude)")
 parser.add_argument("--db", default="./benchmark.db", dest="db", help="The database file to use")
 options = parser.parse_args()
 
-def destiny(*args):
+def destiny(args, verbose=False):
     args = [options.destiny, "--db", options.db] + list(args)
+    if verbose:
+        args.append('-v')
     subprocess.call(args)
 
-def destiny_add(quote, *tags):
-    args = ["add", quote]
+def destiny_add(message=None, input_file=None, tags=None, verbose=False):
+    args = ["add"]
+    if message:
+        args.append(message)
+    elif input_file:
+        args.append("-i")
+        args.append(input_file)
+
+    tags = tags or []
     for tag in tags:
         args.append("-t")
         args.append(tag)
-    destiny(*args)
+    destiny(args, verbose=verbose)
 
 def main():
-    # try:
-    #     os.remove(options.db)
-    # except Exception:
-    #     pass
+    try:
+        os.remove(options.db)
+    except Exception:
+        pass
 
-    print("Adding %s entries" % options.count)
-    start = time.clock()
-    for i in range(options.count):
-        print("Adding entry: %s" % i)
-    
-        destiny_add("hello", "Test")
-    elapsed = time.clock() - start
-    print("Finished inserting in: %s" % elapsed)
+    # It's much faster to spin one process and pass it in a file
+    # then spin up thousands of processes for one adage at a time
+    with tempfile.NamedTemporaryFile() as temp:
+        # Make a sizeable message payload
+        message = b"a" * 500
+        print("Writing to temp file")
+        for i in range(options.count):
+            temp.write(message)
+            temp.write(b"\n%\n")
+        temp.flush()
+
+        print("Adding entries to destiny")
+        start = time.clock()
+        destiny_add(input_file=temp.name)
+        destiny_add(input_file=temp.name, tags=["a", "b", "c", "d", "e", "f", "g", "h"])
+        destiny_add(input_file=temp.name, tags=["a", "b"])
+        destiny_add(input_file=temp.name, tags=["c", "d", "e"])
+        destiny_add(input_file=temp.name, tags=["f", "g", "h"])
+        print("Finished inserting in: %s" % (time.clock() - start))
 
 if __name__ == "__main__":
     main()
