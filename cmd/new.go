@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Ssawa/destiny/storage"
-	"github.com/Ssawa/destiny/utils"
+	"github.com/cj-dimaggio/destiny/storage"
+	"github.com/cj-dimaggio/destiny/utils"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )

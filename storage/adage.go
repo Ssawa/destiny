@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Ssawa/bolt"
-	"github.com/Ssawa/destiny/utils"
+	"github.com/cj-dimaggio/bolt"
+	"github.com/cj-dimaggio/destiny/utils"
 	"github.com/satori/go.uuid"
 )
 

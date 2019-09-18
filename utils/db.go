@@ -3,7 +3,7 @@ package utils
 import (
 	"os"
 
-	"github.com/Ssawa/bolt"
+	"github.com/cj-dimaggio/bolt"
 )
 
 // OpenReadWrite opens a Bolt DB database with exclusive Read/Write access.

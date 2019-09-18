@@ -1,6 +1,6 @@
 package main
 
-import "github.com/Ssawa/destiny/cmd"
+import "github.com/cj-dimaggio/destiny/cmd"
 
 func main() {
 	cmd.Execute()

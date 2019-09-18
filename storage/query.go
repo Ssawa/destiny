@@ -3,8 +3,8 @@ package storage
 import (
 	"math/rand"
 
-	"github.com/Ssawa/bolt"
-	"github.com/Ssawa/destiny/utils"
+	"github.com/cj-dimaggio/bolt"
+	"github.com/cj-dimaggio/destiny/utils"
 )
 
 // GetAdageFromAll gets an Adage from anywhere in the database

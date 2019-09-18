@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/Ssawa/destiny/storage"
-	"github.com/Ssawa/destiny/utils"
+	"github.com/cj-dimaggio/destiny/storage"
+	"github.com/cj-dimaggio/destiny/utils"
 
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
